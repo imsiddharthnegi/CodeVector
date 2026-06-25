@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CodeVector — Product Browser</title>
+  <meta name="description" content="Browse 200,000 products with fast cursor-based pagination." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0f14;
+      --surface:   #161922;
+      --surface2:  #1e2230;
+      --border:    #2a2f3d;
+      --accent:    #6c6fff;
+      --accent-dim:#6c6fff22;
+      --text:      #e8eaf0;
+      --muted:     #7b82a0;
+      --success:   #4ade80;
+      --warning:   #facc15;
+      --radius:    12px;
+      --shadow:    0 4px 24px rgba(0,0,0,.45);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* ── Layout ── */
+    .app {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    header {
+      padding: 40px 0 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 32px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 36px; height: 36px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -.3px;
+    }
+
+    h1 span {
+      color: var(--accent);
+    }
+
+    .subtitle {
+      font-size: .8rem;
+      color: var(--muted);
+      font-weight: 400;
+      letter-spacing: 0;
+      margin-left: 2px;
+    }
+
+    /* ── Controls ── */
+    .controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+
+    .select-wrap {
+      position: relative;
+    }
+
+    select {
+      appearance: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: inherit;
+      font-size: .88rem;
+      padding: 9px 36px 9px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+      min-width: 180px;
+    }
+
+    select:hover, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    .select-wrap::after {
+      content: '▾';
+      position: absolute;
+      right: 12px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+      font-size: .8rem;
+    }
+
+    .count-badge {
+      font-size: .8rem;
+      color: var(--muted);
+      margin-left: auto;
+      padding: 6px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+    }
+
+    /* ── Grid ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 18px;
+      min-height: 340px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: transform .18s, border-color .18s, box-shadow .18s;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: var(--accent);
+      box-shadow: 0 8px 32px rgba(108,111,255,.15);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .card-name {
+      font-weight: 600;
+      font-size: .95rem;
+      color: var(--text);
+      line-height: 1.35;
+    }
+
+    .badge {
+      font-size: .72rem;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 20px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .badge-Electronics  { background: #1e3a5f; color: #60a5fa; }
+    .badge-Clothing     { background: #3b1f5e; color: #c084fc; }
+    .badge-Books        { background: #1e3d2a; color: #4ade80; }
+    .badge-Home---Garden{ background: #3d2e1e; color: #fb923c; }
+    .badge-Sports       { background: #3a1f1f; color: #f87171; }
+    .badge-Toys         { background: #3b3318; color: #facc15; }
+    .badge-Beauty       { background: #3b2038; color: #f472b6; }
+    .badge-Automotive   { background: #1f2c3a; color: #38bdf8; }
+    .badge-default      { background: var(--surface2); color: var(--muted); }
+
+    .card-price {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -.5px;
+    }
+
+    .card-meta {
+      font-size: .78rem;
+      color: var(--muted);
+      margin-top: auto;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Spinner ── */
+    .spinner-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 340px;
+      grid-column: 1 / -1;
+    }
+
+    .spinner {
+      width: 42px; height: 42px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Empty ── */
+    .empty {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 300px;
+      color: var(--muted);
+      gap: 10px;
+    }
+
+    .empty-icon { font-size: 3rem; }
+
+    /* ── Pagination ── */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 36px;
+    }
+
+    button {
+      font-family: inherit;
+      font-size: .88rem;
+      font-weight: 600;
+      padding: 10px 22px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      transition: background .18s, border-color .18s, box-shadow .18s, opacity .18s;
+    }
+
+    button:hover:not(:disabled) {
+      background: var(--surface2);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    button:disabled {
+      opacity: .35;
+      cursor: not-allowed;
+    }
+
+    #btn-next {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    #btn-next:hover:not(:disabled) {
+      background: #7c7fff;
+      border-color: #7c7fff;
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    .page-indicator {
+      font-size: .82rem;
+      color: var(--muted);
+      min-width: 70px;
+      text-align: center;
+    }
+
+    /* ── Error toast ── */
+    .error-bar {
+      display: none;
+      background: #3a1f1f;
+      border: 1px solid #f87171;
+      color: #fca5a5;
+      padding: 12px 18px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: .88rem;
+    }
+
+    @media (max-width: 540px) {
+      header { flex-direction: column; align-items: flex-start; }
+      .count-badge { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="logo">
+        <div class="logo-icon">⚡</div>
+        <div>
+          <h1>Code<span>Vector</span></h1>
+          <div class="subtitle">Product Browser API</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="controls">
+      <div class="select-wrap">
+        <select id="category-filter" aria-label="Filter by category">
+          <option value="">All Categories</option>
+          <option value="Electronics">Electronics</option>
+          <option value="Clothing">Clothing</option>
+          <option value="Books">Books</option>
+          <option value="Home &amp; Garden">Home &amp; Garden</option>
+          <option value="Sports">Sports</option>
+          <option value="Toys">Toys</option>
+          <option value="Beauty">Beauty</option>
+          <option value="Automotive">Automotive</option>
+        </select>
+      </div>
+      <span class="count-badge" id="count-badge">— products</span>
+    </div>
+
+    <div class="error-bar" id="error-bar" role="alert"></div>
+
+    <div class="grid" id="grid" aria-live="polite"></div>
+
+    <div class="pagination">
+      <button id="btn-prev" disabled aria-label="Previous page">← Prev</button>
+      <span class="page-indicator" id="page-indicator">Page 1</span>
+      <button id="btn-next" disabled aria-label="Next page">Next →</button>
+    </div>
+  </div>
+
+  <script>
+    const CATEGORIES = ['Electronics','Clothing','Books','Home & Garden','Sports','Toys','Beauty','Automotive'];
+
+    const grid         = document.getElementById('grid');
+    const btnPrev      = document.getElementById('btn-prev');
+    const btnNext      = document.getElementById('btn-next');
+    const pageIndicator= document.getElementById('page-indicator');
+    const countBadge   = document.getElementById('count-badge');
+    const categorySel  = document.getElementById('category-filter');
+    const errorBar     = document.getElementById('error-bar');
+
+    // State
+    let cursorStack = [];   // stack of cursors for back-nav; index 0 = first page (null)
+    let currentPage = 1;
+    let currentCategory = '';
+
+    function badgeClass(cat) {
+      const key = cat.replace(/\s*&\s*/g, '-').replace(/\s+/g, '-');
+      return CATEGORIES.some(c => c === cat) ? `badge-${key}` : 'badge-default';
+    }
+
+    function formatDate(iso) {
+      return new Date(iso).toLocaleDateString('en-US', {
+        year: 'numeric', month: 'short', day: 'numeric'
+      });
+    }
+
+    function formatPrice(p) {
+      return '$' + parseFloat(p).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    function showError(msg) {
+      errorBar.textContent = msg;
+      errorBar.style.display = 'block';
+    }
+
+    function clearError() {
+      errorBar.style.display = 'none';
+      errorBar.textContent = '';
+    }
+
+    function renderSpinner() {
+      grid.innerHTML = `<div class="spinner-wrap"><div class="spinner"></div></div>`;
+    }
+
+    function renderEmpty() {
+      grid.innerHTML = `
+        <div class="empty">
+          <div class="empty-icon">📭</div>
+          <div>No products found</div>
+        </div>`;
+    }
+
+    function renderProducts(products) {
+      if (!products.length) { renderEmpty(); return; }
+
+      grid.innerHTML = products.map(p => `
+        <div class="card" role="article">
+          <div class="card-header">
+            <div class="card-name">${escHtml(p.name)}</div>
+            <span class="badge ${badgeClass(p.category)}">${escHtml(p.category)}</span>
+          </div>
+          <div class="card-price">${formatPrice(p.price)}</div>
+          <div class="card-meta">Added ${formatDate(p.created_at)}</div>
+        </div>
+      `).join('');
+    }
+
+    function escHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    async function fetchProducts(cursor = null) {
+      renderSpinner();
+      clearError();
+      btnPrev.disabled = true;
+      btnNext.disabled = true;
+
+      const params = new URLSearchParams();
+      params.set('limit', '20');
+      if (currentCategory) params.set('category', currentCategory);
+      if (cursor) params.set('cursor', cursor);
+
+      try {
+        const res = await fetch(`/products?${params.toString()}`);
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        const json = await res.json();
+
+        renderProducts(json.data);
+
+        countBadge.textContent = `${json.data.length} of 200,000 products`;
+        pageIndicator.textContent = `Page ${currentPage}`;
+
+        btnPrev.disabled = currentPage <= 1;
+        btnNext.disabled = !json.pagination.hasMore;
+
+        // Store next cursor for forward nav
+        if (json.pagination.hasMore && json.pagination.nextCursor) {
+          // If this is a new page push, save next cursor
+          if (cursorStack.length < currentPage) {
+            cursorStack.push(json.pagination.nextCursor);
+          } else {
+            cursorStack[currentPage - 1] = json.pagination.nextCursor;
+          }
+        }
+      } catch (err) {
+        showError('Failed to load products. Is the server running?');
+        renderEmpty();
+        btnPrev.disabled = currentPage <= 1;
+      }
+    }
+
+    function resetPagination() {
+      cursorStack = [];
+      currentPage = 1;
+    }
+
+    // Category change
+    categorySel.addEventListener('change', () => {
+      currentCategory = categorySel.value;
+      resetPagination();
+      fetchProducts(null);
+    });
+
+    // Next page
+    btnNext.addEventListener('click', () => {
+      const nextCursor = cursorStack[currentPage - 1];
+      if (!nextCursor) return;
+      currentPage++;
+      fetchProducts(nextCursor);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Previous page
+    btnPrev.addEventListener('click', () => {
+      if (currentPage <= 1) return;
+      currentPage--;
+      // Go back: cursor for this page = stack[currentPage - 2] (or null for page 1)
+      const prevCursor = currentPage === 1 ? null : cursorStack[currentPage - 2];
+      fetchProducts(prevCursor);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Initial load
+    fetchProducts(null);
+  </script>
+</body>
+</html>
